@@ -1,0 +1,20 @@
+{
+  "buildFiles": [
+    "/home/rosca-opimba/flutter/packages/flutter_tools/gradle/src/main/groovy/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/home/rosca-opimba/Android/Sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/home/rosca-opimba/Musique/onyfast-mobile-new-main/android/app/.cxx/Debug/2c4t6f3b/x86_64",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/home/rosca-opimba/Android/Sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/home/rosca-opimba/Musique/onyfast-mobile-new-main/android/app/.cxx/Debug/2c4t6f3b/x86_64",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {}
+}

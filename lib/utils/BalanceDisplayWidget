@@ -1,0 +1,489 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:gap/gap.dart';
+import 'package:get/get.dart';
+
+/// Widget pour afficher le solde de manière élégante
+class BalanceDisplayWidget extends StatefulWidget {
+  final String balance;
+  final String currency;
+  final String cardNumber;
+  final VoidCallback? onRefresh;
+  final VoidCallback? onCopy;
+  final bool showActions;
+
+  const BalanceDisplayWidget({
+    Key? key,
+    required this.balance,
+    this.currency = 'FCFA',
+    required this.cardNumber,
+    this.onRefresh,
+    this.onCopy,
+    this.showActions = true,
+  }) : super(key: key);
+
+  @override
+  State<BalanceDisplayWidget> createState() => _BalanceDisplayWidgetState();
+}
+
+class _BalanceDisplayWidgetState extends State<BalanceDisplayWidget>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: Duration(milliseconds: 800),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
+
+    _slideAnimation = Tween<double>(
+      begin: 0.3,
+      end: 0.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOutCubic,
+    ));
+
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+
+    return AnimatedBuilder(
+      animation: _animationController,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, _slideAnimation.value * 50),
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(screenSize.width * 0.05),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.green.shade400,
+                    Colors.green.shade600,
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.green.withOpacity(0.3),
+                    blurRadius: 15,
+                    offset: Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(screenSize),
+                  Gap(screenSize.height * 0.02),
+                  _buildBalanceAmount(screenSize),
+                  Gap(screenSize.height * 0.01),
+                  _buildCardInfo(screenSize),
+                  if (widget.showActions) ...[
+                    Gap(screenSize.height * 0.02),
+                    _buildActionButtons(screenSize),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildHeader(Size screenSize) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.account_balance_wallet,
+              color: Colors.white,
+              size: screenSize.width * 0.06,
+            ),
+            Gap(screenSize.width * 0.02),
+            Text(
+              'Solde disponible',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.9),
+                fontSize: screenSize.width * 0.04,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+        if (widget.onRefresh != null)
+          GestureDetector(
+            onTap: widget.onRefresh,
+            child: Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.refresh,
+                color: Colors.white,
+                size: screenSize.width * 0.05,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildBalanceAmount(Size screenSize) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(
+          child: Text(
+            widget.balance,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: screenSize.width * 0.08,
+              fontWeight: FontWeight.bold,
+              height: 1.0,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        Gap(screenSize.width * 0.02),
+        Padding(
+          padding: EdgeInsets.only(bottom: 4),
+          child: Text(
+            widget.currency,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.9),
+              fontSize: screenSize.width * 0.045,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCardInfo(Size screenSize) {
+    return Row(
+      children: [
+        Icon(
+          Icons.credit_card,
+          color: Colors.white.withOpacity(0.8),
+          size: screenSize.width * 0.04,
+        ),
+        Gap(screenSize.width * 0.02),
+        Text(
+          'Carte: ${widget.cardNumber}',
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.8),
+            fontSize: screenSize.width * 0.035,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButtons(Size screenSize) {
+    return Row(
+      children: [
+        if (widget.onCopy != null)
+          Expanded(
+            child: _buildActionButton(
+              icon: Icons.copy,
+              label: 'Copier',
+              onTap: _copyBalance,
+              screenSize: screenSize,
+            ),
+          ),
+        if (widget.onCopy != null && widget.onRefresh != null)
+          Gap(screenSize.width * 0.03),
+        if (widget.onRefresh != null)
+          Expanded(
+            child: _buildActionButton(
+              icon: Icons.refresh,
+              label: 'Actualiser',
+              onTap: widget.onRefresh!,
+              screenSize: screenSize,
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    required Size screenSize,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          vertical: screenSize.height * 0.012,
+          horizontal: screenSize.width * 0.04,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: Colors.white,
+              size: screenSize.width * 0.04,
+            ),
+            Gap(screenSize.width * 0.02),
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: screenSize.width * 0.035,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _copyBalance() {
+    final balanceText = '${widget.balance} ${widget.currency}';
+    Clipboard.setData(ClipboardData(text: balanceText));
+    
+    Get.snackbar(
+      'Copié',
+      'Solde copié dans le presse-papiers',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.green,
+      colorText: Colors.white,
+      duration: Duration(seconds: 2),
+      margin: EdgeInsets.all(16),
+      borderRadius: 12,
+      icon: Icon(Icons.check_circle, color: Colors.white),
+    );
+
+    // Animation de feedback
+    _animationController.forward(from: 0.8);
+    
+    if (widget.onCopy != null) {
+      widget.onCopy!();
+    }
+  }
+}
+
+/// Dialog personnalisé pour afficher le solde
+class BalanceDialog extends StatelessWidget {
+  final String balance;
+  final String currency;
+  final String cardNumber;
+  final DateTime? lastUpdated;
+
+  const BalanceDialog({
+    Key? key,
+    required this.balance,
+    this.currency = 'FCFA',
+    required this.cardNumber,
+    this.lastUpdated,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      elevation: 16,
+      child: Container(
+        padding: EdgeInsets.all(screenSize.width * 0.06),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.white,
+              Colors.grey.shade50,
+            ],
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildDialogHeader(screenSize),
+            Gap(screenSize.height * 0.03),
+            BalanceDisplayWidget(
+              balance: balance,
+              currency: currency,
+              cardNumber: cardNumber,
+              showActions: true,
+              onCopy: () {},
+              onRefresh: () {
+                Navigator.of(context).pop();
+                // Trigger refresh logic
+              },
+            ),
+            if (lastUpdated != null) ...[
+              Gap(screenSize.height * 0.02),
+              _buildLastUpdated(screenSize),
+            ],
+            Gap(screenSize.height * 0.03),
+            _buildCloseButton(context, screenSize),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDialogHeader(Size screenSize) {
+    return Row(
+      children: [
+        Container(
+          padding: EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.green.shade100,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            Icons.account_balance_wallet,
+            color: Colors.green.shade700,
+            size: screenSize.width * 0.06,
+          ),
+        ),
+        Gap(screenSize.width * 0.04),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Consultation du solde',
+                style: TextStyle(
+                  fontSize: screenSize.width * 0.05,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade800,
+                ),
+              ),
+              Text(
+                'Solde actuel de votre carte',
+                style: TextStyle(
+                  fontSize: screenSize.width * 0.035,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLastUpdated(Size screenSize) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        vertical: screenSize.height * 0.01,
+        horizontal: screenSize.width * 0.03,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.blue.shade200),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.access_time,
+            color: Colors.blue.shade600,
+            size: screenSize.width * 0.04,
+          ),
+          Gap(screenSize.width * 0.02),
+          Text(
+            'Mis à jour: ${_formatDateTime(lastUpdated!)}',
+            style: TextStyle(
+              color: Colors.blue.shade700,
+              fontSize: screenSize.width * 0.03,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCloseButton(BuildContext context, Size screenSize) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: () => Navigator.of(context).pop(),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.grey.shade200,
+          foregroundColor: Colors.grey.shade700,
+          padding: EdgeInsets.symmetric(vertical: screenSize.height * 0.015),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 0,
+        ),
+        child: Text(
+          'Fermer',
+          style: TextStyle(
+            fontSize: screenSize.width * 0.04,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inMinutes < 1) {
+      return 'À l\'instant';
+    } else if (difference.inMinutes < 60) {
+      return 'Il y a ${difference.inMinutes} min';
+    } else if (difference.inHours < 24) {
+      return 'Il y a ${difference.inHours}h';
+    } else {
+      return '${dateTime.day}/${dateTime.month}/${dateTime.year} à ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
+    }
+  }
+}                                                                                                                                                                             

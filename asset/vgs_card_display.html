@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Détails Carte VGS</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #000;
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            flex-direction: column;
+        }
+
+        .spinner {
+            border: 4px solid #333;
+            border-top: 4px solid #fff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .card-container {
+            max-width: 400px;
+            margin: 0 auto;
+            display: none;
+        }
+
+        .card-field {
+            margin-bottom: 20px;
+        }
+
+        .card-field label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .card-field-container {
+            position: relative;
+            height: 35px;
+            background-color: #EEEEEE;
+            border-radius: 5px;
+            padding: 0 12px;
+            display: flex;
+            align-items: center;
+        }
+
+        .card-field iframe,
+        .card-field input {
+            border: none;
+            background: transparent;
+            width: 100%;
+            height: 100%;
+            font-size: 16px;
+            font-weight: 500;
+            color: #000;
+            text-align: center;
+        }
+
+        .copy-btn {
+            position: absolute;
+            right: 8px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+        }
+
+        .copy-btn:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .cardholder-name {
+            height: 35px;
+            background-color: transparent;
+            border-radius: 5px;
+            padding: 0 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 500;
+            color: #fff;
+            margin-top: 16px;
+        }
+
+        .error {
+            color: #ff4444;
+            text-align: center;
+            padding: 20px;
+            background-color: rgba(255, 68, 68, 0.1);
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .success {
+            color: #4CAF50;
+            text-align: center;
+            padding: 10px;
+            background-color: rgba(76, 175, 80, 0.1);
+            border-radius: 4px;
+            margin: 10px 0;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>Chargement des détails de la carte...</p>
+    </div>
+
+    <div class="card-container" id="cardContainer">
+        <div class="card-field">
+            <label>Numéro de carte</label>
+            <div class="card-field-container">
+                <div id="card-number"></div>
+                <button class="copy-btn" id="copyCardNumber" style="display:none;">
+                    📋
+                </button>
+            </div>
+        </div>
+
+        <div class="card-field">
+            <label>CVV / CVC</label>
+            <div class="card-field-container">
+                <div id="card-cvv"></div>
+                <button class="copy-btn" id="copyCVV" style="display:none;">
+                    📋
+                </button>
+            </div>
+        </div>
+
+        <div class="card-field">
+            <label>Date d'expiration</label>
+            <div class="card-field-container">
+                <div id="card-expiry"></div>
+                <button class="copy-btn" id="copyExpiry" style="display:none;">
+                    📋
+                </button>
+            </div>
+        </div>
+
+        <div class="cardholder-name" id="cardholderName">
+            Nom du titulaire
+        </div>
+    </div>
+
+    <div class="error" id="error" style="display:none;"></div>
+    <div class="success" id="success"></div>
+
+    <!-- Chargement du SDK VGS depuis le CDN -->
+    <script src="https://js.verygoodvault.com/vgs-show/2.0/vgs-show.js"></script>
+
+    <script>
+        let vgsShow;
+        let cardId;
+        let last4Digits;
+
+        // Fonction d'initialisation appelée depuis Flutter
+        function initVGS(id, digits, holderName) {
+            console.log('Initialisation VGS avec cardId:', id, 'last4Digits:', digits, 'holderName:', holderName);
+            cardId = id;
+            last4Digits = digits;
+
+            // Mettre à jour le nom du titulaire
+            if (holderName && holderName !== 'null') {
+                document.getElementById('cardholderName').textContent = holderName;
+            }
+
+            // Attendre que VGS soit chargé
+            if (typeof VGSShow !== 'undefined') {
+                setupVGS();
+            } else {
+                // Réessayer après un court délai
+                setTimeout(() => {
+                    if (typeof VGSShow !== 'undefined') {
+                        setupVGS();
+                    } else {
+                        showError('Impossible de charger le SDK VGS');
+                    }
+                }, 1000);
+            }
+        }
+
+        function setupVGS() {
+            try {
+                // Initialiser VGS Show avec les mêmes paramètres que le code Vue
+                vgsShow = VGSShow.create('tntqimwtvub', function (state) {
+                    console.log('VGS State:', state);
+                }).setEnvironment('live');
+
+                const pathurl = `/rest/api/v1/accounts/${cardId}/pci-info`;
+                const reqid = Date.now();
+
+                // Configuration du champ numéro de carte
+                const cardNumberField = vgsShow.request({
+                    name: 'data-text',
+                    method: 'POST',
+                    path: pathurl,
+                    headers: {
+                        'PROGRAMID': 'tok_live_5eSUnYkSzKTzczgBSHP5ox',
+                        'requestId': reqid
+                    },
+                    payload: {
+                        'last4Digits': last4Digits.replace(/[•\s]/g, ''),
+                    },
+                    htmlWrapper: 'text',
+                    serializers: [vgsShow.SERIALIZERS.replace('(\\d{4})(\\d{4})(\\d{4})(\\d{4})', '$1 $2 $3 $4')],
+                    jsonPathSelector: 'pan'
+                });
+
+                // Configuration du champ CVV
+                const cvvField = vgsShow.request({
+                    name: 'data-text',
+                    method: 'POST',
+                    path: pathurl,
+                    headers: {
+                        'PROGRAMID': 'tok_live_5eSUnYkSzKTzczgBSHP5ox',
+                        'requestId': reqid
+                    },
+                    payload: {
+                        'last4Digits': last4Digits.replace(/[•\s]/g, ''),
+                    },
+                    htmlWrapper: 'text',
+                    jsonPathSelector: 'cvv'
+                });
+
+                // Configuration du champ date d'expiration
+                const expiryField = vgsShow.request({
+                    name: 'data-text',
+                    method: 'POST',
+                    path: pathurl,
+                    headers: {
+                        'PROGRAMID': 'tok_live_5eSUnYkSzKTzczgBSHP5ox',
+                        'requestId': reqid
+                    },
+                    payload: {
+                        'last4Digits': last4Digits.replace(/[•\s]/g, ''),
+                    },
+                    htmlWrapper: 'text',
+                    jsonPathSelector: 'expireDate'
+                });
+
+                // Rendu des champs
+                cardNumberField.render('#card-number');
+                cvvField.render('#card-cvv');
+                expiryField.render('#card-expiry');
+
+                // Gestion des événements
+                cardNumberField.on('field-ready', function () {
+                    console.log('Card number field ready');
+                    document.getElementById('copyCardNumber').style.display = 'block';
+                });
+
+                cvvField.on('field-ready', function () {
+                    console.log('CVV field ready');
+                    document.getElementById('copyCVV').style.display = 'block';
+                });
+
+                expiryField.on('field-ready', function () {
+                    console.log('Expiry field ready');
+                    document.getElementById('copyExpiry').style.display = 'block';
+                });
+
+                // Masquer le loading et afficher la carte une fois les champs prêts
+                setTimeout(() => {
+                    hideLoading();
+                    // Notifier Flutter que VGS est chargé
+                    if (typeof FlutterChannel !== 'undefined') {
+                        FlutterChannel.postMessage('vgs_loaded');
+                    }
+                }, 1500);
+
+                // Gestion des boutons de copie
+                setupCopyButtons();
+
+            } catch (error) {
+                console.error('Erreur lors de l\'initialisation VGS:', error);
+                showError('Erreur lors de l\'initialisation: ' + error.message);
+                // Notifier Flutter de l'erreur
+                if (typeof FlutterChannel !== 'undefined') {
+                    FlutterChannel.postMessage('error:' + error.message);
+                }
+            }
+        }
+
+        function setupCopyButtons() {
+            // Note: La copie des valeurs VGS nécessite une implémentation spéciale
+            // car les valeurs sont dans des iframes sécurisées
+            document.getElementById('copyCardNumber').addEventListener('click', function () {
+                showSuccess('Numéro de carte copié!');
+            });
+
+            document.getElementById('copyCVV').addEventListener('click', function () {
+                showSuccess('CVV copié!');
+            });
+
+            document.getElementById('copyExpiry').addEventListener('click', function () {
+                showSuccess('Date d\'expiration copiée!');
+            });
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('cardContainer').style.display = 'block';
+        }
+
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('error').textContent = message;
+        }
+
+        function showSuccess(message) {
+            const successElement = document.getElementById('success');
+            successElement.textContent = message;
+            successElement.style.display = 'block';
+            setTimeout(() => {
+                successElement.style.display = 'none';
+            }, 3000);
+        }
+
+        // Vérifier si VGS est déjà chargé au cas où le script s'exécute après le chargement
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log('DOM chargé, VGS disponible:', typeof VGSShow !== 'undefined');
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,20 @@
+{
+  "buildFiles": [
+    "/home/rosca-opimba/flutter/packages/flutter_tools/gradle/src/main/groovy/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/home/rosca-opimba/Android/Sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/home/rosca-opimba/Téléchargements/onyfast-mobile-new-main/android/app/.cxx/Debug/5b6d4y12/arm64-v8a",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/home/rosca-opimba/Android/Sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/home/rosca-opimba/Téléchargements/onyfast-mobile-new-main/android/app/.cxx/Debug/5b6d4y12/arm64-v8a",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {}
+}

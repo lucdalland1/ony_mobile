@@ -1,0 +1,140 @@
+// def keystoreProperties = new Properties()
+// def keystorePropertiesFile = rootProject.file('key.properties')
+// if (keystorePropertiesFile.exists()) {
+//     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+// }
+
+// plugins {
+//     id "com.android.application"
+//     id "kotlin-android"
+//     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+//     id "dev.flutter.flutter-gradle-plugin"
+//     id "com.google.gms.google-services"
+    
+// }
+
+// android {
+//     namespace = "com.onyfast.app"
+//     compileSdk = flutter.compileSdkVersion
+//     ndkVersion = flutter.ndkVersion
+//     signingConfigs {
+//         release {
+//             keyAlias keystoreProperties['keyAlias']
+//             keyPassword keystoreProperties['keyPassword']
+//             storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+//             storePassword keystoreProperties['storePassword']
+//         }
+//     }
+//     compileOptions {    
+//         // sourceCompatibility = JavaVersion.VERSION_1_8
+//         // targetCompatibility = JavaVersion.VERSION_1_8
+//         sourceCompatibility JavaVersion.VERSION_11
+//         targetCompatibility JavaVersion.VERSION_11
+//         coreLibraryDesugaringEnabled true
+//     }
+
+//     kotlinOptions {
+//         // jvmTarget = JavaVersion.VERSION_1_8
+//         jvmTarget = "11"
+//         sourceCompatibility = JavaVersion.VERSION_11
+//         targetCompatibility = JavaVersion.VERSION_11
+//     }
+
+//     kotlinOptions {
+//         jvmTarget = JavaVersion.VERSION_11
+//     }
+
+//     defaultConfig {
+//         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+//         applicationId = "com.onyfast.app"
+//         // You can update the following values to match your application needs.
+//         // For more information, see: https://flutter.dev/to/review-gradle-config.
+//         minSdkVersion flutter.minSdkVersion // Définir la version minimale à 23 pour l'empreinte digitale
+//         targetSdk = flutter.targetSdkVersion
+//         versionCode = flutter.versionCode
+//         versionName = flutter.versionName
+//     }
+
+//     buildTypes {
+//         release {
+//             // TODO: Add your own signing config for the release build.
+//             // Signing with the debug keys for now, so `flutter run --release` works.
+//             // signingConfig = signingConfigs.debug
+//             signingConfig signingConfigs.release
+
+//         }
+//     }
+// }
+
+// flutter {
+//     source = "../.."
+// }
+
+// dependencies {
+    
+//   implementation "androidx.core:core-ktx:1.12.0"
+//   coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
+// }
+
+
+plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    // Le plugin Flutter doit venir après Android et Kotlin
+    id "dev.flutter.flutter-gradle-plugin"
+    id "com.google.gms.google-services"
+}
+
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('key.properties')
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+android {
+    namespace = "com.onyfast.app"
+    compileSdk = flutter.compileSdkVersion
+    ndkVersion = flutter.ndkVersion
+
+    signingConfigs {
+        release {
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+            storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+            storePassword keystoreProperties['storePassword']
+        }
+    }
+
+    defaultConfig {
+        applicationId = "com.onyfast.app"
+        minSdkVersion flutter.minSdkVersion
+        targetSdk = flutter.targetSdkVersion
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+        coreLibraryDesugaringEnabled true
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_11
+    }
+}
+
+flutter {
+    source = "../.."
+}
+
+dependencies {
+    implementation "androidx.core:core-ktx:1.12.0"
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
+}

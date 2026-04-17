@@ -1,0 +1,157 @@
+name: onyfast
+description: "A new Flutter project."
+publish_to: "none" # Remove this line if you wish to publish to pub.dev
+
+version: 3.0.14+52
+
+environment:
+  sdk: ^3.6.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # The following adds the Cupertino Icons font to your application.
+  # Use with the CupertinoIcons class for iOS style icons.
+  cupertino_icons: ^1.0.8
+  gap: ^3.0.1
+  http: ^1.3.0
+  circular_reveal_animation: ^2.0.1
+  floating_bottom_navigation_bar: ^1.5.2
+  flutter_svg: ^2.2.0
+  contained_tab_bar_view: ^0.8.0
+  backdrop_modal_route: ^2.0.4
+  fl_country_code_picker: ^0.1.9+1
+  country_picker_flutter: ^1.1.1
+  get: ^4.6.6
+  get_storage: ^2.1.1
+  custom_clippers: ^2.0.0
+  dio: ^5.8.0+1
+  flutter_secure_storage: ^10.0.0
+  scrollbar_ultima: ^1.0.4
+  wolt_modal_sheet: ^0.11.0
+  font_awesome_flutter: ^10.8.0
+  local_auth: ^2.3.0
+  widget_toolkit_biometrics: ^0.1.0
+  url_launcher: ^6.3.2
+  whatsapp_unilink: ^2.1.0
+  async: ^2.11.0
+  equatable: ^2.0.7
+  intl_phone_number_input: ^0.7.4
+  intl_phone_field: ^3.2.0
+  simple_barcode_scanner: ^0.3.0
+  qr_flutter: ^4.1.0
+  crypto: ^3.0.6
+  encrypt: ^5.0.3
+  mobile_scanner: ^7.1.2
+  modal_searchbox: ^0.0.4
+  carousel_slider: ^5.0.0
+  open_file: ^3.5.10
+  file_picker: ^10.0.0
+  app_popup_menu: ^1.0.0
+  intl_phone_number_field: ^0.2.1
+  pinput: ^5.0.1
+  image_picker: ^1.1.2
+  pdf: ^3.11.3
+  path_provider: ^2.1.5
+  google_fonts: ^6.2.1
+  printing: ^5.14.2
+  flutter_sizer: ^1.0.5
+  device_preview: ^1.2.0
+  flutter_circle_chart: ^1.0.0
+  group_radio_button: ^1.3.0
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  flag: ^7.0.0
+  sms_autofill: ^2.4.1
+  firebase_core: ^4.1.1
+  firebase_messaging: ^16.0.2
+  flutter_local_notifications: ^19.4.2
+  timeago: ^3.7.1
+  flutter_contacts: ^1.1.7+1
+
+  connectivity_plus: ^6.1.4
+  pull_to_refresh: ^2.0.0
+  showcaseview: ^4.0.1
+  share_plus: ^11.0.0
+  shimmer: ^3.0.0
+  accordion: ^2.6.0
+  flutter_easy_search_bar: ^0.0.2
+  internet_connection_checker_plus: ^2.7.2
+  pin_code_fields: ^8.0.1
+  # webview_flutter: ^4.13.0
+  intl: ^0.20.2
+  u_credit_card: ^1.4.0
+  webview_flutter: ^4.9.0
+  webview_flutter_android: ^3.12.1
+  webview_flutter_wkwebview: ^3.9.4
+  rename: ^3.1.0
+  external_app_launcher: ^4.0.3
+  flutter_email_sender: ^7.0.0
+  visibility_detector: ^0.4.0+2
+  flutter_device_imei: ^0.0.4
+  no_screenshot: ^0.3.1
+  pubspec_parse: ^1.5.0
+  google_maps_flutter: ^2.14.0
+  tutorial_coach_mark: ^1.3.3
+  geolocator: ^14.0.2
+  flutter_polyline_points: ^3.1.0
+  ntp: ^2.0.0
+  app_settings: ^5.2.0
+  new_version_plus: ^0.1.1
+  package_info_plus: ^8.3.1
+  gpt_markdown: ^1.1.5
+  image_cropper: ^12.0.0
+  collection: ^1.19.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_launcher_icons: ^0.13.1
+  # flutter_native_splash: ^2.3.10
+  flutter_lints: ^6.0.0
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "asset/logoonyfast.png"
+  adaptive_icon_background: "#ffffff"
+  remove_alpha_ios: true # Corrige l'avertissement App Store
+  adaptive_icon_foreground: "asset/logoonyfast.png"
+  # Ajoutez ces paramètres pour Android
+  android_gravity: "center" # Centre l'icône
+  android_resize: 0.5 # Réduit à 70% (valeur entre 0.1 et 1.0)
+
+# flutter_native_splash:
+#   color: "#ffffff"
+#   image: asset/splashonyfast.png
+#   android: true
+#   ios: true
+#   web: false
+
+flutter:
+  # The following line ensures that the Material Icons font is
+  # included with your application, so that you can use the icons in
+  # the material Icons class.
+  uses-material-design: true
+
+  # Assets configuration
+  assets:
+    - assets/fonts/Roboto-Regular.ttf
+    - assets/fonts/Roboto-Bold.ttf
+    - asset/
+    - asset/bonus.svg
+    - asset/cartes.svg
+    - asset/virement.svg
+    - asset/congotelecom.svg
+    - asset/iconefacture.svg
+    - asset/bas.svg
+    - asset/droite.svg
+
+  # Fonts configuration
+  fonts:
+    - family: Roboto
+      fonts:
+        - asset: assets/fonts/Roboto-Regular.ttf
+        - asset: assets/fonts/Roboto-Bold.ttf
+          weight: 700

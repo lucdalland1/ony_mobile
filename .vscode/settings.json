@@ -1,0 +1,11 @@
+{
+  "dart.analysisExcludedFolders": ["build/"],
+  "dart.showLintNames": true,
+  "dart.enableSdkFormatter": true,
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit"
+  },
+  "cmake.sourceDirectory": "/Users/macbookpro/Dev/Clients/Onyfast/wallet/onyfast_mobile_new_transaction/linux",
+  "java.configuration.updateBuildConfiguration": "interactive"
+}

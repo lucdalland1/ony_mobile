@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "555044626923",
+    "project_id": "onyfast-cd56d",
+    "storage_bucket": "onyfast-cd56d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:555044626923:android:a17a1867f89209d9e379ae",
+        "android_client_info": {
+          "package_name": "com.onyfast.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCGJI8a_E0ODjVinMbQd8hpNO0vE4VZaJA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
