@@ -6,10 +6,13 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart';
 import 'package:onyfast/Api/piecesjustificatif_Api/pieces_justificatif_api.dart';
+import 'package:onyfast/Api/user_inscription.dart';
 import 'package:onyfast/Color/app_color_model.dart';
 import 'package:onyfast/Controller/%20manage_cards_controller_v2.dart';
 import 'package:onyfast/Controller/RecenteTransaction/recenttransactcontroller.dart';
 import 'package:onyfast/Controller/niveau/niveau_controller.dart';
+import 'package:onyfast/Controller/oeilsolde.dart';
+import 'package:onyfast/Controller/solde_controller.dart';
 import 'package:onyfast/Controller/verifier_identite/voir_justificatifresidencecontroller.dart';
 import 'package:onyfast/Services/token_service.dart';
 import 'package:onyfast/View/Activit%C3%A9/verification_identite/verifier_mon_compte.dart';
@@ -35,6 +38,7 @@ class _BankCardState extends State<BankCard> {
 
   final ManageCardsController controller = Get.find<ManageCardsController>();
   final TokenService tokenService = Get.find<TokenService>();
+  final AuthController connexion = Get.find();
 
   // Variables pour gérer le rafraîchissement automatique
   bool _isRefreshing = false;
@@ -68,11 +72,19 @@ class _BankCardState extends State<BankCard> {
   }
 
   NiveauController niveauController = Get.find();
+  Future<void> _loadInitialData() async {
+    // Vérifie si les données sont déjà chargées
+    // if (connexion.walletInfo.isEmpty) {
+    // connexion.SoldewalletInfo.
+    connexion.walletInfo.value = {};
+    await connexion.fetchSolde();
+    // }
+  }
 
   @override
   void initState() {
     super.initState();
-
+    _loadInitialData();
     // S'assurer que TokenService est initialisé
     _initializeServices();
 
@@ -334,7 +346,8 @@ class _BankCardState extends State<BankCard> {
             children: [
               Icon(Icons.check_circle, color: Colors.white),
               Gap(8),
-              Text('Session rafraîchie avec succès', style: TextStyle(fontSize: 8.sp)),
+              Text('Session rafraîchie avec succès',
+                  style: TextStyle(fontSize: 8.sp)),
             ],
           ),
           backgroundColor: Colors.green,
@@ -486,7 +499,8 @@ class _BankCardState extends State<BankCard> {
             children: [
               CupertinoActivityIndicator(),
               Gap(16),
-              Text('Consultation du solde...', style: TextStyle(fontSize: 8.sp)),
+              Text('Consultation du solde...',
+                  style: TextStyle(fontSize: 8.sp)),
             ],
           ),
         ),
@@ -519,7 +533,7 @@ class _BankCardState extends State<BankCard> {
               Gap(12),
               Text(
                 'Solde disponible:',
-                style: TextStyle(fontSize:12.sp),
+                style: TextStyle(fontSize: 12.sp),
               ),
               Gap(4),
               Text(
@@ -643,8 +657,7 @@ class _BankCardState extends State<BankCard> {
                                   Text(
                                     "Ajouter ma carte Physique",
                                     style: TextStyle(
-                                        fontSize:
-                                          8.sp,
+                                        fontSize: 8.sp,
                                         color: AppColorModel.black),
                                   )
                                 ],
@@ -685,8 +698,7 @@ class _BankCardState extends State<BankCard> {
                                   Text(
                                     "Créer ma carte virtuelle",
                                     style: TextStyle(
-                                        fontSize:
-                                            8.sp,
+                                        fontSize: 8.sp,
                                         color: AppColorModel.black),
                                   )
                                 ],
@@ -783,6 +795,8 @@ class _BankCardState extends State<BankCard> {
 
   @override
   Widget build(BuildContext context) {
+    final SoldeController balanceController = Get.put(SoldeController());
+
     return Obx(() {
       if (controller.isLoading.value || _isRefreshing) {
         return AspectRatio(
@@ -1193,273 +1207,50 @@ class _BankCardState extends State<BankCard> {
 
       return Column(
         children: [
-          Row(
-  mainAxisAlignment: MainAxisAlignment.start,
-  children: [
-    Text(
-      controller.toogle.value
-          ? _safeFormatBalance(card?.balance)
-          : '??? XAF',
-      style: TextStyle(
-        color: Color(0xFF1A3CBF),
-        fontWeight: FontWeight.bold,
-        fontSize: 12.sp,
-      ),
-      overflow: TextOverflow.ellipsis,
-    ),
-    const SizedBox(width: 6),
-    GestureDetector(
-      onTap: () async {
-        controller.toogle.value = !controller.toogle.value;
-        if (card != null) {
-          await controller.getCardBalance(card.cardID);
-        }
-      },
-      child: Icon(
-        !controller.toogle.value
-            ? Icons.visibility
-            : Icons.visibility_off,
-        color: Color(0xFF1A3CBF),
-        size: rf(context, 24),
-      ),
-    ),
-  ],
-),
-          AspectRatio(
-            aspectRatio: 1.75,
-            child: Builder(
-              builder: (context) {
-                final sw = MediaQuery.of(context).size.width;
-                final ch = sw / 1.75; // ← hauteur réelle de la carte
-
-                return Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: card?.typeLabel == "Physical ID:"
-                          ? const AssetImage("asset/carte-onyfast-vierge.png")
-                          : const AssetImage(
-                              "asset/carte-onyfast-virtual.png"),
-                      fit: BoxFit.cover,
-                    ),
-                    borderRadius: BorderRadius.circular(18),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF1B3BAD).withOpacity(0.45),
-                        blurRadius: 22,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
+          Obx(() {
+            var wallet = connexion.walletInfo.value;
+            var solde = wallet['solde'];
+            if (solde == null) return SizedBox.shrink();
+            int soldeInt = (double.tryParse(solde.toString()) ?? 0.0).toInt();
+            if (soldeInt < 1000) return SizedBox.shrink();
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Text(
+                  '${balanceController.isBalanceVisible.value ? (wallet.isNotEmpty && wallet['solde'] != null ? NumberFormat("#,##0", "fr_FR").format((double.tryParse(wallet['solde'].toString()) ?? 0.0).toInt()) : '0') : '???'} XAF',
+                  style: TextStyle(
+                    color: Color(0xFF1A3CBF),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12.sp,
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(18),
-                    child: Stack(
-                      children: [
-                        // ── Flèches navigation si plusieurs cartes ──
-                        if (controller.hasMultipleCards)
-                          Positioned(
-                            top: ch * 0.04,
-                            left: sw * 0.02,
-                            right: sw * 0.02,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Material(
-                                  elevation: 6,
-                                  shape: const CircleBorder(),
-                                  color: controller.canShowPrevious
-                                      ? AppColorModel.Bluecolor242
-                                      : AppColorModel.Bluecolor242
-                                          .withOpacity(0.3),
-                                  child: InkWell(
-                                    onTap: controller.canShowPrevious
-                                        ? () {
-                                            controller.previousCard();
-                                            controller.recupereTransactions();
-                                          }
-                                        : null,
-                                    customBorder: const CircleBorder(),
-                                    child: Padding(
-                                      padding: EdgeInsets.all(sw * 0.025),
-                                      child: Icon(Icons.arrow_back_ios,
-                                          color: Colors.white,
-                                          size: sw * 0.05),
-                                    ),
-                                  ),
-                                ),
-                                Material(
-                                  elevation: 6,
-                                  shape: const CircleBorder(),
-                                  color: controller.canShowNext
-                                      ? AppColorModel.Bluecolor242
-                                      : AppColorModel.Bluecolor242
-                                          .withOpacity(0.3),
-                                  child: InkWell(
-                                    onTap: controller.canShowNext
-                                        ? () {
-                                            controller.nextCard();
-                                            controller.recupereTransactions();
-                                          }
-                                        : null,
-                                    customBorder: const CircleBorder(),
-                                    child: Padding(
-                                      padding: EdgeInsets.all(sw * 0.025),
-                                      child: Icon(Icons.arrow_forward_ios,
-                                          color: Colors.white,
-                                          size: sw * 0.05),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(width: 6),
+                GestureDetector(
+                  onTap: () async {
+                    balanceController.toggleBalanceVisibility();
 
-                        // ── Statut actif/bloqué ──
-                        Positioned(
-                          top: ch * 0.08,
-                          left: sw * 0.10,
-                          child: Container(
-                            padding: EdgeInsets.symmetric(
-                                // ✅ CORRECTION : vertical réduit
-                                horizontal: sw * 0.030,
-                                vertical: ch * 0.015),
-                            decoration: BoxDecoration(
-                              color: card?.isActive == true
-                                  ? Colors.green
-                                  : Colors.red,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              card?.isActive == true ? 'ACTIVE' : 'BLOQUÉE',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 8.sp,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        // ── Type + ID ──
-                        Positioned(
-                          top: ch * 0.30,
-                          left: sw * 0.05,
-                          right: sw * 0.05,
-                          child: Text(
-                            '${card?.typeLabel ?? ''} ${card?.cardID ?? ''}',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 8.sp,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-
-                        // ── Numéro masqué ──
-                        Positioned(
-                          top: ch * 0.52,
-                          left: sw * 0.05,
-                          right: sw * 0.05,
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              card?.maskedCardNumber ??
-                                  '•••• •••• •••• ••••',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 12.sp,
-                                letterSpacing: 2,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        // ── Expire + Titulaire ──
-                        Positioned(
-                          left: sw * 0.05,
-                          right: sw * 0.05,
-                          bottom: ch * 0.08,
-                          child: Row(
-                            children: [
-                              Expanded(
-                                flex: 2,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('EXPIRE FIN',
-                                        style: TextStyle(
-                                            color: Colors.white70,
-                                            fontSize: 9.sp)),
-                                    SizedBox(height: 3.dp),
-                                    Text(card?.expiryDate ?? '--/--',
-                                        style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 13.dp,
-                                            fontWeight: FontWeight.w600)),
-                                  ],
-                                ),
-                              ),
-                              Expanded(
-                                flex: 3,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('TITULAIRE',
-                                        style: TextStyle(
-                                            color: Colors.white70,
-                                            fontSize: 9.sp)),
-                                    SizedBox(height: 3.dp),
-                                    Text(
-                                      card?.holderName.toUpperCase() ?? '---',
-                                      style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 9.sp,
-                                          fontWeight: FontWeight.w600),
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 1,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        // ── Dots indicateurs ──
-                        if (controller.hasMultipleCards)
-                          Positioned(
-                            bottom: ch * 0.03,
-                            left: 0,
-                            right: 0,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: List.generate(
-                                controller.cards.length,
-                                (index) => Container(
-                                  margin: EdgeInsets.symmetric(
-                                      horizontal: sw * 0.01),
-                                  width: sw * 0.02,
-                                  height: sw * 0.02,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: index ==
-                                            controller.currentCardIndex.value
-                                        ? Colors.white
-                                        : Colors.blueGrey,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
+                    // Actualiser le solde et les informations de user
+                    SoldeRefreshController().refreshUser();
+                    if (card != null) {
+                      await controller.getCardBalance(card.cardID);
+                    }
+                  },
+                  child: Icon(
+                    balanceController.isBalanceVisible.value
+                        ? CupertinoIcons.eye_slash
+                        : CupertinoIcons.eye,
+                    color: Color(0xFF1A3CBF),
+                    size: rf(context, 24),
                   ),
-                );
-              },
-            ),
+                ),
+              ],
+            );
+          }),
+          // ── Remplace le SizedBox + PageView.builder par ceci ──
+          SizedBox(
+            height: MediaQuery.of(context).size.width / 1.75,
+            child: _StackedCardDeck(controller: controller),
           ),
         ],
       );
@@ -1493,30 +1284,28 @@ class _CardMeta extends StatelessWidget {
 }
 
 void _showComingSoon(BuildContext context, [String? title]) {
-
-
-
   Get.dialog(
-  AppDialog(
-    title: title ?? "Vous n'avez pas de pièce jointe",
-    body: "Vous devez ajouter une pièce jointe pour continuer. Rendez-vous dans les paramètres pour en ajouter une.",
-    actions: [
-      AppDialogAction(
-        label: "Annuler",
-        onPressed: () => Get.back(),
-      ),
-      AppDialogAction(
-        label: "Confirmer",
-        isDestructive: true,
-        onPressed: () {
-          Get.back();
-             Get.to(() => VerifierIdentiteScreen());
-          // ta logique ici
-        },
-      ),
-    ],
-  ),
-);
+    AppDialog(
+      title: title ?? "Vous n'avez pas de pièce jointe",
+      body:
+          "Vous devez ajouter une pièce jointe pour continuer. Rendez-vous dans les paramètres pour en ajouter une.",
+      actions: [
+        AppDialogAction(
+          label: "Annuler",
+          onPressed: () => Get.back(),
+        ),
+        AppDialogAction(
+          label: "Confirmer",
+          isDestructive: true,
+          onPressed: () {
+            Get.back();
+            Get.to(() => VerifierIdentiteScreen());
+            // ta logique ici
+          },
+        ),
+      ],
+    ),
+  );
 
   // showCupertinoDialog(
   //   context: context,
@@ -1539,4 +1328,370 @@ void _showComingSoon(BuildContext context, [String? title]) {
   //     ),
   //   ),
   // );
+}
+
+///////////////////////////////////////////////
+class _StackedCardDeck extends StatefulWidget {
+  final ManageCardsController controller;
+  const _StackedCardDeck({required this.controller});
+
+  @override
+  State<_StackedCardDeck> createState() => _StackedCardDeckState();
+}
+
+class _StackedCardDeckState extends State<_StackedCardDeck> {
+  List<int> _order = [];
+  double _dragDeltaX = 0;
+  bool _isSwiping = false;
+
+  ManageCardsController get ctrl => widget.controller;
+  SoldeRefreshController soldeRefreshController =
+      Get.put(SoldeRefreshController());
+  @override
+  void initState() {
+    super.initState();
+    _order = List.generate(ctrl.cards.length, (i) => i);
+  }
+
+  void _swipeNext() {
+    if (_isSwiping || _order.isEmpty) return;
+    setState(() {
+      _isSwiping = true;
+      _dragDeltaX = -1; // flag pour animation gauche
+    });
+    Future.delayed(const Duration(milliseconds: 280), () {
+      setState(() {
+        _order.add(_order.removeAt(0));
+        ctrl.currentCardIndex.value = _order[0];
+        ctrl.recupereTransactions();
+        _dragDeltaX = 0;
+        _isSwiping = false;
+      });
+    });
+  }
+
+  void _swipePrev() {
+    if (_isSwiping || _order.isEmpty) return;
+    setState(() {
+      _isSwiping = true;
+      _dragDeltaX = 1; // flag pour animation droite
+    });
+    Future.delayed(const Duration(milliseconds: 280), () {
+      setState(() {
+        _order.insert(0, _order.removeLast());
+        ctrl.currentCardIndex.value = _order[0];
+        ctrl.recupereTransactions();
+        _dragDeltaX = 0;
+        _isSwiping = false;
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final cards = ctrl.cards;
+      if (cards.isEmpty) return const SizedBox.shrink();
+
+      // Sync order si les cartes changent
+      if (_order.length != cards.length) {
+        _order = List.generate(cards.length, (i) => i);
+      }
+
+      final sw = MediaQuery.of(context).size.width;
+      final ch = sw / 1.75;
+
+      return GestureDetector(
+        onHorizontalDragEnd: (details) {
+          if (details.primaryVelocity != null) {
+            if (details.primaryVelocity! < -200) _swipeNext();
+            if (details.primaryVelocity! > 200) _swipePrev();
+          }
+        },
+        child: Stack(
+          alignment: Alignment.topCenter,
+          children: [
+            // Rendu de bas en haut (pos 2 → 1 → 0)
+            for (int stackPos = _order.length - 1; stackPos >= 0; stackPos--)
+              _buildStackedCard(
+                context,
+                cards[_order[stackPos]],
+                stackPos,
+                sw,
+                ch,
+              ),
+
+            // Dots en bas
+            if (cards.length > 1)
+              Positioned(
+                bottom: 0,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(cards.length, (i) {
+                    final isActive = _order.isNotEmpty && _order[0] == i;
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      width: isActive ? 16 : 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(4),
+                        color: isActive
+                            ? Colors.white
+                            : Colors.white.withOpacity(0.4),
+                      ),
+                    );
+                  }),
+                ),
+              ),
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _buildStackedCard(BuildContext context, dynamic cardItem, int stackPos,
+      double sw, double ch) {
+    // Paramètres visuels selon la position dans la pile
+    const maxVisible = 3;
+    final depth = stackPos.clamp(0, maxVisible - 1);
+
+    final scale = 1.0 - depth * 0.04; // 1.0 / 0.96 / 0.92
+    final yShift = depth * 10.0; // 0 / 10 / 20 px vers le bas
+    final opacity = 1.0 - depth * 0.18; // 1.0 / 0.82 / 0.64
+    final isTop = stackPos == 0;
+
+    // Animation de swipe pour la carte du dessus
+    double swipeX = 0;
+    double swipeRot = 0;
+    if (isTop && _isSwiping) {
+      swipeX = _dragDeltaX < 0 ? -sw * 1.4 : sw * 1.4;
+      swipeRot = _dragDeltaX < 0 ? -0.2 : 0.2;
+    }
+
+    return AnimatedSlide(
+      offset: Offset(swipeX / sw, 0),
+      duration: Duration(milliseconds: _isSwiping && isTop ? 280 : 350),
+      curve: _isSwiping && isTop ? Curves.easeIn : Curves.elasticOut,
+      child: AnimatedScale(
+        scale: scale,
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.elasticOut,
+        alignment: Alignment.topCenter,
+        child: AnimatedOpacity(
+          opacity: opacity,
+          duration: const Duration(milliseconds: 300),
+          child: Transform.translate(
+            offset: Offset(0, yShift),
+            child: Transform.rotate(
+              angle: swipeRot,
+              child: SizedBox(
+                width: sw,
+                height: ch * 0.90,
+                child: _cardContent(context, cardItem, sw, ch),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _cardContent(
+      BuildContext context, dynamic cardItem, double sw, double ch) {
+    return Container(
+      decoration: BoxDecoration(
+        image: DecorationImage(
+          image: cardItem.typeLabel == "Physical ID:"
+              ? const AssetImage("asset/carte-onyfast-vierge.png")
+              : const AssetImage("asset/carte-onyfast-virtual.png"),
+          fit: BoxFit.cover,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF1B3BAD).withOpacity(0.4),
+            blurRadius: 22,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: Stack(
+          children: [
+            // Décors circulaires
+            Positioned(
+                top: -40,
+                right: -10,
+                child: Container(
+                    width: 160,
+                    height: 160,
+                    decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withOpacity(0.06)))),
+            Positioned(
+                bottom: -30,
+                right: 50,
+                child: Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withOpacity(0.05)))),
+
+            // Statut
+            Positioned(
+                top: ch * 0.08,
+                left: sw * 0.05,
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                      horizontal: sw * 0.030, vertical: ch * 0.015),
+                  decoration: BoxDecoration(
+                    color:
+                        cardItem.isActive == true ? Colors.green : Colors.red,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    cardItem.isActive == true ? 'ACTIVE' : 'BLOQUÉE',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 8.sp,
+                        fontWeight: FontWeight.bold),
+                  ),
+                )),
+
+            // Solde + œil
+            Positioned(
+                top: ch * 0.08,
+                right: sw * 0.05,
+                left: sw * 0.40,
+                child: Obx(() => Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            ctrl.toogle.value
+                                ? _safeFormatBalance(cardItem.balance)
+                                : '??? XAF',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10.sp,
+                                fontWeight: FontWeight.bold),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () async {
+                            ctrl.toogle.value = !ctrl.toogle.value;
+                            await ctrl.getCardBalance(cardItem.cardID);
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Icon(
+                                ctrl.toogle.value
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                                color: Colors.white,
+                                size: sw * 0.05),
+                          ),
+                        ),
+                      ],
+                    ))),
+
+            // Type + ID
+            Positioned(
+                top: ch * 0.30,
+                left: sw * 0.05,
+                right: sw * 0.05,
+                child: Text(
+                  '${cardItem.typeLabel ?? ''} ${cardItem.cardID ?? ''}',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 8.sp,
+                      fontWeight: FontWeight.w500),
+                  overflow: TextOverflow.ellipsis,
+                )),
+
+            // Numéro masqué
+            Positioned(
+                top: ch * 0.52,
+                left: sw * 0.05,
+                right: sw * 0.05,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    cardItem.maskedCardNumber ?? '•••• •••• •••• ••••',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12.sp,
+                        letterSpacing: 2,
+                        fontWeight: FontWeight.w500),
+                  ),
+                )),
+
+            // Expire + Titulaire
+            Positioned(
+                left: sw * 0.05,
+                right: sw * 0.05,
+                bottom: ch * 0.10,
+                child: Row(
+                  children: [
+                    Expanded(
+                        flex: 2,
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('EXPIRE FIN',
+                                  style: TextStyle(
+                                      color: Colors.white70, fontSize: 9.sp)),
+                              SizedBox(height: 3.dp),
+                              Text(cardItem.expiryDate ?? '--/--',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13.dp,
+                                      fontWeight: FontWeight.w600)),
+                            ])),
+                    Expanded(
+                        flex: 3,
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('TITULAIRE',
+                                  style: TextStyle(
+                                      color: Colors.white70, fontSize: 9.sp)),
+                              SizedBox(height: 3.dp),
+                              Text(
+                                (cardItem.holderName ?? '---').toUpperCase(),
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 9.sp,
+                                    fontWeight: FontWeight.w600),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            ])),
+                  ],
+                )),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Helpers copiés depuis BankCard (ou passer via le controller)
+  String _safeFormatBalance(dynamic balance) {
+    if (balance == null) return '0 XAF';
+    try {
+      double v = balance is num
+          ? balance.toDouble()
+          : double.tryParse(balance.toString()) ?? 0.0;
+      return '${NumberFormat("#,##0", "fr_FR").format(v)} XAF';
+    } catch (_) {
+      return '0 XAF';
+    }
+  }
 }
